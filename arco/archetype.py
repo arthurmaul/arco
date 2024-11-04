@@ -1,6 +1,6 @@
 """ ... """
 from typing import Any
-from protocols import World
+from arco.protocols import World
 
 
 class Archetype:

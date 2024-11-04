@@ -1,5 +1,11 @@
 from typing import Protocol
 
+class Registry(Protocol):
+    ...
+
+class Archetype(Protocol):
+    ...
+
 class World(Protocol):
     registry: Registry
     archetype_of_type: dict
@@ -46,8 +52,3 @@ class World(Protocol):
     def unset(self, entity: int, component: int) -> None:
         ...
 
-class Registry(Protocol):
-    ...
-
-class Archetype(Protocol):
-    ...
