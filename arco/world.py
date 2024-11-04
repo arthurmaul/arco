@@ -28,7 +28,10 @@ class World:
         self.location_of[entity] = self.origin
         return entity
 
-    def is_attachable(self, component: int):
+    def despawn() -> None:
+        ...
+
+    def is_attachable(self, component: int) -> bool:
         """"""
         return self.attachable in self.location_of[component].signature
 
@@ -36,7 +39,7 @@ class World:
         """"""
         return self.storable in self.location_of[component].signature
 
-    def is_toggleable(self, component: int) -> bool:
+     def is_toggleable(self, component: int) -> bool:
         """"""
         return self.toggleable in self.location_of[component].signature
 
