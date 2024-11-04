@@ -47,7 +47,8 @@ True
 
 Deleting entities is done with the `.despawn` method.
 
-Once deleted, the entity will be recycled with its generation incremented
+Once deleted, the entity will be recycled into the new entity.
+It will have the same entity but with its generation incremented
 
 ```py
 
@@ -67,10 +68,9 @@ You can access both with the `.unpack` method:
 
 ```py
 
->>> registry = entity.Registry()
 >>> e = registry.spawn()
 >>> entity.unpack(e)
-(1, 0)
+(1, 1)
 
 ```
 
@@ -82,7 +82,7 @@ Or individually with the `lower_half_of` and `upper_half_of` functions respectiv
 1
 
 >>> entity.upper_half_of(e)
-0
+1
 
 ```
 
@@ -100,7 +100,6 @@ Creation is done with the `.relation` method:
 
 ```py
 
->>> registry = entity.Registry()
 >>> e = registry.spawn()
 >>> likes = registry.spawn()
 >>> likes_e = entity.relation(likes, e)
