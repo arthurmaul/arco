@@ -1,5 +1,4 @@
 """"""
-from ctypes import c_uint32 as u32
 
 
 ENTITY_LIMIT = 0x7fffffff # 31 bits can be used without interfering with relationship type flags
@@ -48,6 +47,10 @@ class Registry:
         entity, generation = unpack(entity)
         self.next_free, previous_slot = entity, self.next_free
         self.id_of[entity] = pack(previous_slot, generation + 1)
+
+    def has(self, entity: int) -> bool:
+        position = lower_half_of(entity)
+        return self.id_of[position] == entity
 
 
 def lower_half_of(entity: int) -> int:
