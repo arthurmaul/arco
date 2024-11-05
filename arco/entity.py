@@ -49,6 +49,7 @@ class Registry:
         self.id_of[entity] = pack(previous_slot, generation + 1)
 
     def has(self, entity: int) -> bool:
+        """"""
         position = lower_half_of(entity)
         return self.id_of[position] == entity
 
