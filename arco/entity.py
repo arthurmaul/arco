@@ -84,7 +84,7 @@ def pack(entity: int, generation: int) -> int:
     return entity | generation << 32
 
 
-def unpack(entity: int) -> int:
+def unpack(entity: int) -> tuple[int, int]:
     """"""
     return lower_half_of(entity), upper_half_of(entity)
 
