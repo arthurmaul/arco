@@ -1,7 +1,7 @@
 """"""
 
 
-from entity import Registry
+from arco.entity import Registry
 from typing import Any
 from copy import copy
 
@@ -18,8 +18,8 @@ class World:
 
         self.origin = Archetype(self, tuple())
         self.attachable = self.registry.spawn()
-        self.storeable = self.registry.spawn()
-        self.toggleable = self.registry.spawn()
+        self.storable = self.registry.spawn()
+        self.togglable = self.registry.spawn()
         self.wildcard = self.registry.spawn()
 
     def spawn(self) -> int:
@@ -28,9 +28,14 @@ class World:
         self.location_of[entity] = self.origin
         return entity
 
-    def despawn() -> None:
+    def despawn(self, entity) -> None:
         """"""
-        for component in copy(self.location_of[entity]):
+        for component in copy(self.location_of[entity].signature):
+            if self.is_storable(component):
+                self.unset(entity, component)
+            else:
+                self.remove(entity, component)
+        self.location_of.pop(entity)
 
     def is_attachable(self, component: int) -> bool:
         """"""
@@ -40,22 +45,22 @@ class World:
         """"""
         return self.storable in self.location_of[component].signature
 
-     def is_toggleable(self, component: int) -> bool:
+    def is_togglable(self, component: int) -> bool:
         """"""
-        return self.toggleable in self.location_of[component].signature
+        return self.togglable in self.location_of[component].signature
 
     def has(self, entity: int, component: int) -> bool:
         """"""
         return component in self.location_of[entity].signature
 
-    def component(self, storeable: bool = True, toggleable: bool = False) -> Entity:
+    def component(self, storable: bool = True, togglable: bool = False) -> int:
         """"""
         entity = self.spawn()
         self.archetypes_with[entity] = dict()
-        if storeable:
-            self.add(entity, self.storeable)
-        if toggleable:
-            self.add(entity, self.toggleable)
+        if storable:
+            self.add(entity, self.storable)
+        if togglable:
+            self.add(entity, self.togglable)
         self.add(entity, self.attachable)
         return entity
 
