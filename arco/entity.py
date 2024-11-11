@@ -1,99 +1,63 @@
-""""""
-
-
-ENTITY_LIMIT = 0x7fffffff # 31 bits can be used without interfering with relationship type flags
-BOTTOM = 0xffffffff # a mask to extract the bottom half of a 64 bit integer
-HALF = 0x20 # 32 bits or half of a 64 bit integer
-LAST = 0x1f # the last bit of a half, 31 bits
-FLAG = 0x80000000 # a mask to flip the last bit of a half
-
-NONE_FREE = 0 # Comparison value for Registry
-
-
 class EntityLimitReached(Exception):
     pass
 
-
 class Registry:
-    """"""
-
     def __init__(self):
-        """"""
-        self.next_free = 0
-        self.id_of = [None]
+        self.vacant = 0
+        self.slots = [None]
 
     def new(self) -> int:
-        """"""
-        if len(self.id_of) > ENTITY_LIMIT:
+        if self.vacant:
+            old_vacancy, generation = unpack(self.slots[self.vacant])
+            self.vacant, entity = old_vacancy, self.vacant
+            self.slots[entity] = pack(entity, generation)
+            return self.slots[entity]
+        if len(self.slots) > 0x7fffffff:
             raise EntityLimitReached("You have reached the maximum amount of living entities for this registry.")
-        self.id_of.append(entity := len(self.id_of))
+        self.slots.append(entity := len(self.slots))
         return entity
 
-    def recycled(self) -> int:
-        """"""
-        entity, generation = unpack(self.id_of[self.next_free])
-        self.next_free, entity = entity, self.next_free
-        self.id_of[entity] = pack(entity, generation)
-        return self.id_of[entity]
-        
-    def spawn(self) -> int:
-        """"""
-        if self.next_free != NONE_FREE:
-            return self.recycled()
-        return self.new()
+    def recycle(self, entity: int) -> None:
+        new_vacancy, generation = unpack(entity)
+        self.vacant, old_vacancy = new_vacancy, self.vacant
+        self.slots[new_vacancy] = pack(old_vacancy, generation + 1)
 
-    def despawn(self, entity: int) -> None:
-        """"""
-        entity, generation = unpack(entity)
-        self.next_free, previous_slot = entity, self.next_free
-        self.id_of[entity] = pack(previous_slot, generation + 1)
+    def alive(self, entity: int) -> bool:
+        slot = lower_32_bits_of(entity)
+        return self.slots[slot] == entity
 
-    def has(self, entity: int) -> bool:
-        """"""
-        position = lower_half_of(entity)
-        return self.id_of[position] == entity
+def lower_32_bits_of(entity: int) -> int:
+    return entity & 0xffffffff 
 
-
-def lower_half_of(entity: int) -> int:
-    """"""
-    return entity & BOTTOM
-
-
-def upper_half_of(entity: int) -> int:
-    """"""
-    return entity >> HALF
-
+def upper_32_bits_of(entity: int) -> int:
+    return entity >> 0x20
 
 def flag_of(half: int) -> int:
-    """"""
-    return half >> LAST
+    return half >> 0x1f
 
+def enable(half: int) -> int:
+    return half | 0x80000000
+
+def disable(half: int) -> int:
+    return half & 0x1f
 
 def is_relation(relation: int) -> bool:
-    """"""
-    return bool(flag_of(upper_half_of(relation)))
-
+    return bool(flag_of(upper_32_bits_of(relation)))
 
 def is_exclusive(relation: int) -> bool:
-    """"""
-    return bool(flag_of(lower_half_of(relation)))
-
+    return bool(flag_of(lower_32_bits_of(relation)))
 
 def pack(entity: int, generation: int) -> int:
-    """"""
     return entity | generation << 32
 
-
 def unpack(entity: int) -> tuple[int, int]:
-    """"""
-    return lower_half_of(entity), upper_half_of(entity)
+    return lower_32_bits_of(entity), upper_32_bits_of(entity)
+
+def rel(type: int, target: int) -> int:
+    return pack(enabled(lower_32_bits_of(entity)), enabled(lower_32_bits_of(target)))
+
+def exrel(type: int, target: int) -> int:
+    return pack(lower_32_bits_of(entity), enabled(lower_32_bits_of(target)))
 
 
-def relation(type: int, target: int, exclusive: bool = False) -> int:
-    """"""
-    type_entity = lower_half_of(type)
-    target_entity = lower_half_of(target)
-    if exclusive:
-        return pack(type_entity | FLAG, target_entity | FLAG)
-    return pack(type_entity, target_entity | FLAG)
 
