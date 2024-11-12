@@ -18,8 +18,6 @@ class World:
     _alias_index: dict = default(dict)
 
     def __post_init__(self):
-        self._blank = _Archetype(self, tuple())
-        self._archetype_index[tuple()] = self._blank
         self.storable = self._assign_entity()
         self.identity = self._assign_storable(self._assign_entity())
         self._assign_identity(self.storable)
@@ -30,7 +28,8 @@ class World:
 
     def _assign_entity(self):
         entity = self.registry.new()
-        self._entity_index[entity] = self._blank
+        blank = self._archetype_index.setdefault(tuple(), _Archetype(self, tuple()))
+        self._entity_index[entity] = blank
         self._blank.entities.add(entity)
         self._component_index[entity] = set()
         return entity
@@ -43,11 +42,16 @@ class World:
         self.add(component, self.storable)
         return component
 
-    def spawn(self, alias) -> int:
-        return self._assign_identity(self._assign_entity())
+    def spawn(self, alias: str | None = None) -> int:
+        if alias and alias in self.alias_index:
+            return self.alias_index[alias]
+        entity = self._assign_identity(self._assign_entity())
+        if alias:
+            self.alias_index[entity] = alias
+        return entity
 
-    def component(self, alias) -> int:
-        return self._assign_storable(self.spawn())
+    def component(self, alias: str | None) -> int:
+        return self._assign_storable(self.spawn(alias))
 
     def despawn(self, entity: int) -> None:
         for signature in self._component_index[entity]:
@@ -66,11 +70,13 @@ class World:
         return datacls(cls)
 
     def add(self, entity: int, component: int) -> None:
-        if component in self.entity_index[entity].signature: return
+        if component in self.entity_index[entity].signature:
+            return
         self.entity_index[entity]._add(entity, component)
 
     def remove(self, entity: int, component: int) -> None:
-        if component not in self.entity_index[entity].signature: return
+        if component not in self.entity_index[entity].signature:
+            return
         self._entity_index[entity]._remove(entity, component)
 
     def set(self, entity: int, data: Any, component: int | None = None) -> None:
@@ -90,12 +96,6 @@ class World:
 
     def get(self, entity: int, component: int) -> Any:
         return self._entity_index[entity]._components[component][entity]
-
-    def alias(self, value: Any, name: str) -> None:
-        self._alias_index[name] = value
-
-    def lookup(self, name: str) -> Any:
-        return self._alias_index[name]
         
 
 @datacls
@@ -140,6 +140,8 @@ class _Archetype:
         self._entities.remove(entity)
         destination._entities.add(entity)
         self._world.entity_index[entity] = destination
+        if not self._entities:
+            self.drop()
 
     def _drop(self):
         for component, edge in self._edges.items():
